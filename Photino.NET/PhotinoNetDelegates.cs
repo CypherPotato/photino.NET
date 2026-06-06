@@ -192,6 +192,9 @@ public partial class PhotinoWindow
     /// </summary>
     internal void OnWebMessageReceived(string message)
     {
+        if (TryHandleScriptExecutionCallback(message))
+            return;
+
         WebMessageReceived?.Invoke(this, message);
     }
 
