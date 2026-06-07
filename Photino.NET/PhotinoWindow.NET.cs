@@ -1231,6 +1231,23 @@ public partial class PhotinoWindow
     }
 
     /// <summary>
+    /// Gets or sets handlers for InputDialogRequested event.
+    /// Set assigns a new handler to the event.
+    /// </summary>
+    /// <seealso cref="InputDialogRequested"/>
+    public EventHandler<InputDialogEventArgs> InputDialogRequestedHandler
+    {
+        get
+        {
+            return InputDialogRequested;
+        }
+        set
+        {
+            InputDialogRequested += value;
+        }
+    }
+
+    /// <summary>
     /// Gets or Sets the native window width in pixels.
     /// Default is 0.
     /// </summary>
@@ -1483,6 +1500,7 @@ public partial class PhotinoWindow
         _startupParameters.FocusInHandler = OnFocusIn;
         _startupParameters.FocusOutHandler = OnFocusOut;
         _startupParameters.WebMessageReceivedHandler = OnWebMessageReceived;
+        _startupParameters.InputDialogRequestedHandler = OnInputDialogRequested;
         _startupParameters.CustomSchemeHandler = OnCustomScheme;
     }
 
