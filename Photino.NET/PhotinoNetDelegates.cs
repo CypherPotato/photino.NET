@@ -5,6 +5,9 @@ namespace Photino.NET;
 
 public partial class PhotinoWindow
 {
+    private const int InputDialogKindConfirm = 1;
+    private const int InputDialogKindPrompt = 2;
+
     //FLUENT EVENT HANDLER REGISTRATION
     public event EventHandler<Point> WindowLocationChanged;
 
@@ -221,6 +224,68 @@ public partial class PhotinoWindow
         var args = new PopupRequestedEventArgs(this, url, name, x, y, width, height);
         PopupRequested?.Invoke(this, args);
         return (byte)(args.Handled ? 1 : 0);
+    }
+
+    public event EventHandler<InputDialogEventArgs> InputDialogRequested;
+
+    /// <summary>
+    /// Registers user-defined handler methods to receive callbacks when JavaScript requests alert, confirm, or prompt dialogs.
+    /// </summary>
+    /// <returns>
+    /// Returns the current <see cref="PhotinoWindow"/> instance.
+    /// </returns>
+    /// <param name="handler"><see cref="EventHandler{InputDialogEventArgs}"/></param>
+    public PhotinoWindow RegisterInputDialogRequestedHandler(EventHandler<InputDialogEventArgs> handler)
+    {
+        InputDialogRequested += handler;
+        return this;
+    }
+
+    /// <summary>
+    /// Invokes registered user-defined handler methods when JavaScript requests an input dialog.
+    /// </summary>
+    internal int OnInputDialogRequested(int kind, string message, string defaultInput, IntPtr responseBuffer, int responseBufferLength)
+    {
+        var args = kind switch
+        {
+            InputDialogKindConfirm => new ConfirmInputDialogEventArgs(this, message),
+            InputDialogKindPrompt => new PromptInputDialogEventArgs(this, message, defaultInput),
+            _ => new InputDialogEventArgs(this, message)
+        };
+
+        InputDialogRequested?.Invoke(this, args);
+        if (!args.Handled)
+            return 0;
+
+        var flags = 1;
+        if (args.Dismissed)
+            flags |= 2;
+
+        if (args is ConfirmInputDialogEventArgs { Confirmation: true })
+            flags |= 4;
+
+        if (args is PromptInputDialogEventArgs promptArgs &&
+            !promptArgs.Dismissed &&
+            responseBuffer != IntPtr.Zero &&
+            responseBufferLength > 0)
+        {
+            if (IsWindowsPlatform)
+            {
+                var length = Math.Min(promptArgs.Input.Length, responseBufferLength - 1);
+                var chars = promptArgs.Input.AsSpan(0, length).ToArray();
+                Marshal.Copy(chars, 0, responseBuffer, chars.Length);
+                Marshal.WriteInt16(responseBuffer, chars.Length * sizeof(char), 0);
+            }
+            else
+            {
+                var bytes = System.Text.Encoding.UTF8.GetBytes(promptArgs.Input);
+                var byteCount = Math.Min(bytes.Length, responseBufferLength - 1);
+                Marshal.Copy(bytes, 0, responseBuffer, byteCount);
+                Marshal.WriteByte(responseBuffer, byteCount, 0);
+            }
+        }
+
+        return flags;
     }
 
     public delegate bool NetClosingDelegate(object sender, EventArgs e);
