@@ -195,6 +195,9 @@ public partial class PhotinoWindow
     /// </summary>
     internal void OnWebMessageReceived(string message)
     {
+        if (TryHandleScriptExecutionCallback(message))
+            return;
+
         WebMessageReceived?.Invoke(this, message);
     }
 
@@ -221,6 +224,11 @@ public partial class PhotinoWindow
     private EventHandler<InputDialogEventArgs> _inputDialogRequested;
 
     /// <summary>
+    /// Occurs when the browser requests a popup or new window.
+    /// </summary>
+    public event EventHandler<PopupRequestedEventArgs> PopupRequested;
+
+    /// <summary>
     /// Registers user-defined handler methods to receive callbacks when JavaScript requests alert, confirm, or prompt dialogs.
     /// </summary>
     /// <returns>
@@ -230,6 +238,19 @@ public partial class PhotinoWindow
     public PhotinoWindow RegisterInputDialogRequestedHandler(EventHandler<InputDialogEventArgs> handler)
     {
         InputDialogRequested += handler;
+        return this;
+    }
+
+    /// <summary>
+    /// Registers user-defined handler methods to receive callbacks when the browser requests a popup or new window.
+    /// </summary>
+    /// <returns>
+    /// Returns the current <see cref="PhotinoWindow"/> instance.
+    /// </returns>
+    /// <param name="handler"><see cref="EventHandler{PopupRequestedEventArgs}"/></param>
+    public PhotinoWindow RegisterPopupRequestedHandler(EventHandler<PopupRequestedEventArgs> handler)
+    {
+        PopupRequested += handler;
         return this;
     }
 
@@ -286,6 +307,16 @@ public partial class PhotinoWindow
             return;
 
         Invoke(() => Photino_SetInputDialogInterceptionEnabled(_nativeInstance, enabled));
+    }
+
+    /// <summary>
+    /// Invokes registered user-defined handler methods when the browser requests a popup or new window.
+    /// </summary>
+    internal byte OnPopupRequested(string url, string name, int x, int y, int width, int height)
+    {
+        var args = new PopupRequestedEventArgs(this, url, name, x, y, width, height);
+        PopupRequested?.Invoke(this, args);
+        return (byte)(args.Handled ? 1 : 0);
     }
 
     public delegate bool NetClosingDelegate(object sender, EventArgs e);

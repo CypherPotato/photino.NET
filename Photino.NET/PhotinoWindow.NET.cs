@@ -1501,6 +1501,7 @@ public partial class PhotinoWindow
         _startupParameters.FocusOutHandler = OnFocusOut;
         _startupParameters.WebMessageReceivedHandler = OnWebMessageReceived;
         _startupParameters.InputDialogRequestedHandler = OnInputDialogRequested;
+        _startupParameters.PopupRequestedHandler = OnPopupRequested;
         _startupParameters.CustomSchemeHandler = OnCustomScheme;
     }
 
