@@ -198,6 +198,9 @@ public partial class PhotinoWindow
         WebMessageReceived?.Invoke(this, message);
     }
 
+    /// <summary>
+    /// Occurs when JavaScript requests an alert, confirm, or prompt dialog.
+    /// </summary>
     public event EventHandler<InputDialogEventArgs> InputDialogRequested;
 
     /// <summary>
