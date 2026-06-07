@@ -201,7 +201,24 @@ public partial class PhotinoWindow
     /// <summary>
     /// Occurs when JavaScript requests an alert, confirm, or prompt dialog.
     /// </summary>
-    public event EventHandler<InputDialogEventArgs> InputDialogRequested;
+    public event EventHandler<InputDialogEventArgs> InputDialogRequested
+    {
+        add
+        {
+            var wasEmpty = _inputDialogRequested is null;
+            _inputDialogRequested += value;
+            if (wasEmpty && _inputDialogRequested is not null)
+                SetInputDialogInterceptionEnabled(true);
+        }
+        remove
+        {
+            _inputDialogRequested -= value;
+            if (_inputDialogRequested is null)
+                SetInputDialogInterceptionEnabled(false);
+        }
+    }
+
+    private EventHandler<InputDialogEventArgs> _inputDialogRequested;
 
     /// <summary>
     /// Registers user-defined handler methods to receive callbacks when JavaScript requests alert, confirm, or prompt dialogs.
@@ -228,7 +245,7 @@ public partial class PhotinoWindow
             _ => new InputDialogEventArgs(this, message)
         };
 
-        InputDialogRequested?.Invoke(this, args);
+        _inputDialogRequested?.Invoke(this, args);
         if (!args.Handled)
             return 0;
 
@@ -261,6 +278,14 @@ public partial class PhotinoWindow
         }
 
         return flags;
+    }
+
+    private void SetInputDialogInterceptionEnabled(bool enabled)
+    {
+        if (_nativeInstance == IntPtr.Zero)
+            return;
+
+        Invoke(() => Photino_SetInputDialogInterceptionEnabled(_nativeInstance, enabled));
     }
 
     public delegate bool NetClosingDelegate(object sender, EventArgs e);

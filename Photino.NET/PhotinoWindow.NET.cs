@@ -1239,7 +1239,7 @@ public partial class PhotinoWindow
     {
         get
         {
-            return InputDialogRequested;
+            return _inputDialogRequested;
         }
         set
         {
@@ -2420,7 +2420,12 @@ public partial class PhotinoWindow
                 else if (IsMacOsPlatform)
                     Invoke(() => Photino_register_mac());
 
-                Invoke(() => _nativeInstance = Photino_ctor(ref _startupParameters));
+                Invoke(() =>
+                {
+                    _nativeInstance = Photino_ctor(ref _startupParameters);
+                    if (_inputDialogRequested is not null)
+                        Photino_SetInputDialogInterceptionEnabled(_nativeInstance, true);
+                });
             }
             catch (Exception ex)
             {
